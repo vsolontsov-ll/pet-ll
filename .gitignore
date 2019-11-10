@@ -30,3 +30,10 @@
 *.exe
 *.out
 *.app
+
+# Eclipse files
+.cproject
+.project
+
+# Build files (build variant directories)
+/build/*/
