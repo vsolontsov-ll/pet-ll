@@ -10,16 +10,16 @@
 
 namespace pet_ll
 {
-namespace details
-{
-	template<class T> concept Integral = std::is_integral<T>::value;
-}
-
-template<class >
-class tagged_int
-{
-
-};
+//namespace details
+//{
+//	template<class T> concept Integral = std::is_integral<T>::value;
+//}
+//
+//template<class >
+//class tagged_int
+//{
+//
+//};
 
 
 }

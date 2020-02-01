@@ -35,6 +35,12 @@ endif()
 if(NOT CMAKE_CXX_EXTENSIONS)
     set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+enable_testing ()
+
+include_directories(thirdparty)
 
 add_subdirectory(libs)
 #add_subdirectory(utils)
