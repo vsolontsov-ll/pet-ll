@@ -6,7 +6,13 @@
  */
 #include <catch2/catch.hpp>
 #include <iostream>
+
 #include <LogPoint.hpp>
+#include <BinFormatDetector.hpp>
+
+#include <string>
+
+using namespace std::literals::string_literals;
 
 static int counter;
 
@@ -38,11 +44,11 @@ TEST_CASE("Init array", "[initarray]") {
 
 namespace test_log_init{
     [[gnu::used]] void func(){
-        LOG_POINT_INIT(1, "func");
+        LOG_POINT_INIT(1, "func", "");
 
         const auto lambda = [](){
             asm("" ::: "memory");
-            LOG_POINT_INIT(1, "lambda");
+            LOG_POINT_INIT(1, "lambda", "");
         };
         // Call lambda to prevent it from throwing away.
         // Anyway we don't call the func()
@@ -51,17 +57,17 @@ namespace test_log_init{
 
     template<class T>
     void templateFunc(){
-        LOG_POINT_INIT(1, "templateFunc");
+        LOG_POINT_INIT(1, "templateFunc", "");
 
         const auto lambda = [](){
             asm("" ::: "memory");
-            LOG_POINT_INIT(1, "lambda in template");
+            LOG_POINT_INIT(1, "lambda in template", "");
         };
         lambda();
     }
 
-    const ll_log::internal::LogPoint* findPointByFmt(const std::string& fmt) {
-        for(const auto& p: ll_log::internal::getPoints()) {
+    const ll_log::details::LogPoint* findPointByFmt(const std::string& fmt) {
+        for(const auto& p: ll_log::details::getPoints()) {
             std::cout << p.id_ << ", " << p.file_ << ":" << p.line_ << std::endl;
             if(fmt == p.format_)
                 return &p;
@@ -74,7 +80,7 @@ namespace test_log_init{
 } // End of namespace test_log_init
 
 TEST_CASE("Log init", ""){
-    LOG_POINT_INIT(1, "1");
+    LOG_POINT_INIT(1, "1", "");
     CHECK(nullptr != test_log_init::findPointByFmt("1"));
     CHECK(nullptr != test_log_init::findPointByFmt("func"));
     CHECK(nullptr != test_log_init::findPointByFmt("lambda"));
@@ -88,4 +94,39 @@ TEST_CASE("Log init", ""){
     CHECK(nullptr != test_log_init::findPointByFmt("dyn::lambda"));
     // Doesn't meter when calling it -- just prevent from removal
     //test_log_init::templateFunc<char>();
+}
+
+template<class T>
+void checkFormat(char expectation){
+    T t{};
+    T& rt{t};
+    const T& crt{t};
+    const T ct{};
+
+    const auto fmt = ll_log::details::getBinFormat(t, rt, crt, ct);
+    for(const auto c: fmt){
+        CHECK(int{c} == int{expectation});
+    }
+}
+
+TEST_CASE("BinFmt", ""){
+    checkFormat<int>('\x11');
+
+    const int i{};
+    const char c{};
+    const float f{};
+    const auto fmt = ll_log::details::getBinFormat(i, c, f, "12345");
+
+    CHECK(int(fmt[3]) == int('\x2B'));
+    CHECK(fmt == "\x11\x01\x12\x2B"s);
+}
+
+
+TEST_CASE("Log macro. Init", ""){
+    LL_INFO("test");
+    LL_INFO("Test with bin fmt", int{}, char{}, "12345", double{}, float{});
+    auto point{test_log_init::findPointByFmt("Test with bin fmt")};
+    const auto fmt = point->decodeFmt_;
+
+    CHECK(point->decodeFmt_ == "\x11\x01\x2B\x1A\x12\0"s);
 }

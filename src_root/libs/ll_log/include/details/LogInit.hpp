@@ -21,17 +21,20 @@ using LogInitFunc = void(*)();
         :: "p"(func), "n"(sizeof(void*)) :      \
     )
 
-#define LOG_POINT_INIT(level, fmt)                                          \
+#define LOG_POINT_INIT(level, fmt, binFmt)                                  \
     {                                                                       \
-        static ll_log::internal::PointId ptid;                              \
+        static ll_log::details::PointId ptid;                               \
         struct PtInit{                                                      \
             [[gnu::used]] static void init(){                               \
-                ll_log::internal::addPoint(ptid, (level), (fmt), __FILE__, __LINE__, "");    \
+                ll_log::details::addPoint(ptid, (level), (fmt), (binFmt),   \
+                    __FILE__, __LINE__, __PRETTY_FUNCTION__);               \
             }                                                               \
         };                                                                  \
         INIT_ARRAY(PtInit::init);                                           \
     } do{}while(false)
 
+//! Marker the end of arguments list
+struct DummyArg{};
 
 }   // End of namespace ll_log::details
 

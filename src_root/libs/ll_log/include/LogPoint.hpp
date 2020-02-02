@@ -14,7 +14,7 @@
 
 namespace ll_log{
 
-namespace internal{
+namespace details{
 
 #if __cplusplus > 202000
 #   define AGG_INIT(member) .##member =
@@ -39,12 +39,21 @@ struct LogPoint {
 using Points = std::vector<LogPoint>;
 Points& getPoints();
 
-PointId addPoint(PointId& ptid, int level, const char* fmt, const char* file, int line, const char* func);
+PointId addPoint(PointId& ptid, int level, const char* fmt, std::string&& binFmt,
+    const char* file, int line, const char* func);
 
-}	// End of namespace internal
+}	// End of namespace details
 
 }	// End of namespace ll_log
 
+#define LLI_ARG_FIRST(fmt, ...) (fmt)
+#define LLI_GET_BIN_FMT(fmt, ...) ll_log::details::getBinFormat(__VA_ARGS__)
+#define LL_INFO(...)                                                        \
+    LOG_POINT_INIT(                                                         \
+        1 /* TODO replace with log level) */                                \
+        , LLI_ARG_FIRST(__VA_ARGS__, Dummy)                                 \
+        , LLI_GET_BIN_FMT(__VA_ARGS__, ll_log::details::DummyArg{})    \
+    )
 
 
 #endif /* SRC_ROOT_LIBS_LL_LOG_INCLUDE_LOGPOINT_HPP_ */
