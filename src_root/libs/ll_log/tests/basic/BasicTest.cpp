@@ -122,7 +122,7 @@ TEST_CASE("BinFmt", ""){
 }
 
 
-TEST_CASE("Log macro. Init", ""){
+TEST_CASE("Log macro. Check points", ""){
     LL_INFO("test");
     LL_INFO("Test with bin fmt", int{}, char{}, "12345", double{}, float{});
     auto point{test_log_init::findPointByFmt("Test with bin fmt")};

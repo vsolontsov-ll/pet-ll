@@ -31,6 +31,8 @@ constexpr size_t log2(){
         static_assert((s & 1u) == 0);
         return 1 + log2<(s >> 1u)>();
     }
+    // Impossible
+    return 0;
 }
 
 struct BinFmtItemFields{
@@ -49,7 +51,7 @@ struct BinFmtItem{
 
 //using BinFmtItem = unsigned char;
 template<class T>
-std::enable_if_t<std::is_integral_v<T>, char> getItemBinFmt(T)
+constexpr std::enable_if_t<std::is_integral_v<T>, char> getItemBinFmt(T)
 {
     constexpr BinFmtItem res{{
        std::is_signed_v<T> ? T_SINT : T_UINT
@@ -59,7 +61,7 @@ std::enable_if_t<std::is_integral_v<T>, char> getItemBinFmt(T)
 }
 
 template<class T>
-std::enable_if_t<std::is_floating_point_v<T>, char> getItemBinFmt(T)
+constexpr std::enable_if_t<std::is_floating_point_v<T>, char> getItemBinFmt(T)
 {
     constexpr BinFmtItem res{{
        T_FLT
@@ -69,7 +71,7 @@ std::enable_if_t<std::is_floating_point_v<T>, char> getItemBinFmt(T)
 }
 
 template<size_t size>
-std::enable_if_t<(size <= 32 && size > 1), char> getItemBinFmt(const char(&)[size]){
+constexpr std::enable_if_t<(size <= 32 && size > 1), char> getItemBinFmt(const char(&)[size]){
     constexpr BinFmtItem res{{
        T_STR
        , (size - 1)
@@ -78,7 +80,7 @@ std::enable_if_t<(size <= 32 && size > 1), char> getItemBinFmt(const char(&)[siz
 }
 
 template<class T>
-std::enable_if_t<std::is_convertible_v<T, const char*>, char> getItemFormat(T&&){
+constexpr std::enable_if_t<std::is_convertible_v<T, const char*>, char> getItemFormat(T&&){
     using U = std::remove_cv_t<std::remove_reference_t<T>>;
     using BaseT = std::remove_cv_t<std::remove_extent_t<U>>;
     if constexpr(std::is_array_v<U> && std::extent_v<U> <= BinFmtItemFields::c_maxShortStrSize
@@ -97,7 +99,7 @@ std::enable_if_t<std::is_convertible_v<T, const char*>, char> getItemFormat(T&&)
     return res.val;
 }
 
-char getItemBinFmt(const std::string&){
+constexpr char getItemBinFmt(const std::string&){
     constexpr BinFmtItem res{{
        T_STR
        , 0
@@ -105,7 +107,7 @@ char getItemBinFmt(const std::string&){
     return res.val;
 }
 
-char getItemBinFmt(const std::string_view&){
+constexpr char getItemBinFmt(const std::string_view&){
     constexpr BinFmtItem res{{
        T_STR
        , 0
@@ -113,7 +115,7 @@ char getItemBinFmt(const std::string_view&){
     return res.val;
 }
 
-char getItemBinFmt(DummyArg){
+constexpr char getItemBinFmt(DummyArg){
     constexpr BinFmtItem res{{
        T_UINT
        , 0

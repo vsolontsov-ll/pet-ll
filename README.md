@@ -1,8 +1,50 @@
 # pet-ll
 
-## Plan
-### Low latency logger
-#### Type of information required
+## Low latency logger
+### Overview
+Logger is a traditional pain for C++ developers. There're many options and some of them are pretty good.
+However general purpose logger should be portable and feature-rich. Even with C++ where one of the key principles is
+"you don't pay for what you don't use" there's still no "zero-cost abstraction" (thanks to Chandler Carruth for 
+his fantastic talk on CPPCON 2019). 
+
+Low latency "world" is a a land of trade-offs. Portability is usually one of potentially secrified feature. Here I'm 
+going to ignore portability when it's profitable. Which means that to make it working on a different platform one would 
+need to apply specifal efforts and may fail.
+
+**Primary platform is x86_64/Linux**
+
+Let's take a look at  usual time-consuming actions for dumping data:
+1. make a decision whether to log or not (check log mask/log level)
+    1. fetch log mask to a register (as it's in 99.999% of cases is dynamic, people don't want to recompile program 
+    just to change the log level!)
+    2. branching 
+2. Take a timestamp (clock_gettime() is vDSO which is "fast", but still a function call)
+3. Format a string to dump (huge waste of time!)
+    1. Cache pollution -- to format a string it needs to convert data into a string representation 
+    (directly in a log buffer or in a static buffer and copy it then)
+4. Dump to a file/memory or enqueue for later dumping
+File IO usually leads to syscalls -- expensive!
+Dumping directly to memory mapped area is risky, kernel time to time dumps dirty pages which means a page-fault and 
+stall while OS is taking care of the page.
+
+5. [optional] Synchronization
+Async loggers may (and usually do) require synchronization accessing a queue.
+
+### Key decisions
+1. No data formatting -- dump binary, take formatting offline.
+2. No synchronization -- Logger object is not thread safe (one thread can use it at a time).
+
+   However there could be thread-safe interface for maintenence (replacing log buffer and so on)
+
+3. Timestamping mechanizm is configurable at compile-time. Default is RDTSC.
+4. Data is segregated to static and dynamic. All about placement of logging record line source file:line, format 
+string -- everthing we can we should take off-line.
+5. [TODO] Later on it's possible to use self-modifying code and remove unnecessary branching for disabled/enabled log 
+points. Static data could contain address of branching instruction, logging code start and end. So branching instruction 
+could be replaced with JMP to (or NOP)
+
+### Type of information required
+
 1. Timestamp (runtime) -- one of the most important attributes of the log record. Different timestamping mechanisms give 
 different granularity, accuracy and correlation with machine "wall-clock". One may want to use system clock, 
 steady clock, RDTSC or something else. Timestamping mechanism must be configurable at compile time.
@@ -10,14 +52,14 @@ steady clock, RDTSC or something else. Timestamping mechanism must be configurab
 2. Threads ID (startup) -- by design logger instance is single-threaded. So no good reason to repeat Thread ID 
 again and again.
 
-3. Location in source (compile time) -- __FILE__, __LINE__ and (a bit less) __PRETTY_FUNCTION__ in log macros is a very 
-regular practice. Whether you need it in output or not, once it's collected at compile time and doesn't add any 
+3. Location in source (compile time) -- \__FILE\__, \__LINE\__ and (a bit less) \__PRETTY\_FUNCTION\__ in log macros is 
+a very regular practice. Whether you need it in output or not, once it's collected at compile time and doesn't add any 
 runtime overhead, worth to have it.
 
 4. Serialization format (compile time) -- this is a binary logger. It doesn't format records at runtime. How to dump 
 the data into buffers must be known at compile time.
 
-5. Parising format (compile time / ? startup) -- this format tells how to parse the data from binary buffers. 
+5. Parising format (compile time / startup) -- this format tells how to parse the data from binary buffers. 
 
 6. Format string (compile time / ? startup) -- in majority of cases you at compile time know how you would want to 
 format your text in the log record. 
@@ -25,15 +67,20 @@ format your text in the log record.
 7. Dynamic data (runtime) -- the data your program actually aquired at run time. By it's nature it's runtime and that's
 the main source of complexity (all the compile time and startup data can be encoded by a single integer).
 
-##### Supported data types
+#### Supported data types
 * Built-in (int, const char*, ...) -- first cut plan
 * String literals -- next iteration
 * Complex objects. As an idea it can provide a format string, decoding format and serialization function at compile
 time. 
 
-#### Why using .init_array
+### Why using .init_array
+_TODO_ Revisit this part. Actually, .init_array is a hidden section used by glibc (and not only). But we easily can use
+is just own custom section either with pointers or something else. With a custom section we can get a deterministic 
+order: constructor of a static object (mabe even thread-local logger) can walk through the section and collect all the 
+information.
+
 It's not easy writing low latency code. 
-Permanently checking assembly generated by a compiler is annoying (but thanks to Met Godbolt, he made it easier).
+Permanently checking assembly generated by a compiler is annoying (but thanks to Mett Godbolt, he made it easier).
 Sometimes it requires to add compiler-specific attributes or platform-specific calls/instructions.
 
 So portability of this code is limited by definition. Based on requirements, partability/standard-compliece 
@@ -42,13 +89,35 @@ In other words, squeezing a few CPU cycles could be considered as a good enough 
 all other scenarios must be rejected as a "dirty hack".   
 
 Initarray is a section in ELF containing a flat array of pointers to functions. The functions to be called at startup.
-C++ compilers usually uses this sections for initializing global and name-space-scoped static objects.
+C++ compilers usually uses this sections for initializing global and namespace-scoped static objects.
 
 Different platforms may have different order of initialization of even ignore this section. So this approach **is not 
 portable**.
 
+### Buffer traits
+1. Unlimited -- at compile time we're 100% sure thread can't run out of space
+    * Can add a guard page and sighandler.
+2. Limited -- Chech it has enough space every time
+3. Replacable (limited).
 
-### Tagged integers
+   Another thread may advertise a new buffer. Logger is free to take it when needed.  E.g. bachground thread dumps RAM buffers to a file by completion.
+    
+4. Mandatory replacable (limited)
+
+   Another thread may request a logger to use a new buffer.
+    E.g. another thread does msync on a memory-mapped file and up-front requires logger to use another buffer.
+
+
+### No space processing options
+1. Stall
+2. Allocate (request) and continue
+3. Drop the record
+    1. Silently
+    2. Somehow register dropped records number
+
+
+
+## Tagged integers
 Time to time it's nice to destinguish integer arguments by type. 
 E.g. it's done in std::chrono for date/time components.
 
