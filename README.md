@@ -258,4 +258,4 @@ Format the record in human readable form.
 Current assumption that libfmt will be used. Libfmt uses something like array of variants under the hood which can be 
 generated at run-time. But there's no "public" interface for that -- only internal `fmt::internal::make_arg<>()`. But there's even a test `TEST(FormatTest, Dynamic)`.
 
-<<TBD>>
+**===TBC===**

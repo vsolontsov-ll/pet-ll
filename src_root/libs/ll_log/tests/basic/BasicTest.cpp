@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "../../include/Logger.hpp"
 using namespace std::literals::string_literals;
 
 static int counter;
@@ -123,10 +124,36 @@ TEST_CASE("BinFmt", ""){
 
 
 TEST_CASE("Log macro. Check points", ""){
-    LL_INFO("test");
-    LL_INFO("Test with bin fmt", int{}, char{}, "12345", double{}, float{});
+    ll_log::DummyLogger logger;
+    // LL_INFO("test");
+    _mm_lfence();
+    const auto tsStart{_rdtsc()};
+
+    LL_INFO("Test with bin fmt", int{1}, char{2}, "12345", double{0.1}, float{0.2f});
+
+    _mm_lfence();
+    const auto tsEnd{_rdtsc()};
+
     auto point{test_log_init::findPointByFmt("Test with bin fmt")};
     const auto fmt = point->decodeFmt_;
 
     CHECK(point->decodeFmt_ == "\x11\x01\x2B\x1A\x12\0"s);
+
+    using ll_log::details::read;
+    using Codec = decltype(logger)::Codec;
+
+    auto rdBuf = logger.getReadBuf();
+    const auto ptid = read<Codec, const void*>(rdBuf);
+    CHECK(ptid == point->binId_);
+
+    auto ts = read<Codec, uint64_t>(rdBuf);
+    CHECK(ts >= tsStart);
+    CHECK(ts <= tsEnd);
+    std::cout << "Latency: " << (tsEnd - tsStart) << std::endl;
+
+    CHECK(1 == read<Codec, int>(rdBuf));
+    CHECK('\2' == read<Codec, char>(rdBuf));
+    CHECK("12345" == (read<Codec, const char*>(rdBuf)));
+    CHECK(0.1 == Approx{read<Codec, double>(rdBuf)});
+    CHECK(0.2f == Approx{read<Codec, float>(rdBuf)});
 }

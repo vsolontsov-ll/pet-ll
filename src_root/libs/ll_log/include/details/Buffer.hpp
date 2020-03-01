@@ -8,6 +8,7 @@
 #ifndef SRC_ROOT_LIBS_LL_LOG_INCLUDE_DETAILS_BUFFER_HPP_
 #define SRC_ROOT_LIBS_LL_LOG_INCLUDE_DETAILS_BUFFER_HPP_
 #include <cstdint>
+#include <cstring>
 #include <type_traits>
 #include <utility>
 #include <limits>
@@ -81,9 +82,18 @@ struct BasicWriter{
     constexpr void done() noexcept {}
 };
 
+template<class, class = void> struct IsWriter : std::false_type{};
+template<class T> struct IsWriter<T
+    , std::void_t<
+        decltype(std::declval<T&>().writeBytes(std::declval<void*>(), std::declval<const void*>(), 0u))
+        , decltype(std::declval<T&>().done())
+    >
+> : std::true_type{};
+
+static_assert(IsWriter<BasicWriter>::value);
 
 template<class WriterT = BasicWriter>
-class PackedCodecT{
+struct PackedCodecT{
     using Writer = WriterT;
     Writer writer_;
 
@@ -98,19 +108,26 @@ class PackedCodecT{
         return l;
     }
 
-    template<class Buffer, class T>
-    void storeOne(Buffer& buf, const T& v, size_t = 0) noexcept{
-        constexpr auto s = sizeof(T);
-        writer_.writeBytes(bytePtr(buf), &v, s);
-        buf.shift(s);
+    static size_t sizeOf(const std::string_view& s, size_t& offset) noexcept{
+        const auto l = s.size();
+        offset += l;
+        return l;
     }
 
-    template<class Buffer>
-    void storeOne(Buffer& buf, const char* s, size_t len) noexcept{
+    template<class T>
+    void storeOne(char* p, const T& v, size_t = 0) noexcept{
+        constexpr auto s = sizeof(T);
+        writer_.writeBytes(p, &v, s);
+    }
+
+    void storeOne(char* p, const char* s, size_t len) noexcept{
         const auto strLen = static_cast<uint16_t>(len - sizeof(uint16_t));
-        storeOne(buf, strLen);
-        writer_.writeBytes(bytePtr(buf), s, strLen);
-        buf.shift(strLen);
+        storeOne(p, strLen);
+        writer_.writeBytes(p + sizeof(uint16_t), s, strLen);
+    }
+
+    void storeOne(char* p, const std::string_view& s, size_t len) noexcept{
+        storeOne(p, s.data(), len);
     }
 
     template<class Buffer, class TID>
@@ -133,31 +150,37 @@ class PackedCodecT{
         return ret;
     }
 
-public:
-    template<class Buffer, class ...Args>
-    void store(Buffer& buf, const Args& ...args){
-        static_assert(IsWritableBuffer<Buffer>::value);
-
-        size_t offset{0};
-        const size_t lens[sizeof...(args)] = {
-            sizeOf(args, offset)...
-        };
-        if(buf.hasSpace(offset)){
-            size_t i{0};
-            (storeOne(buf, args, lens[i++]), ...);
-        }
-        writer_.done();
-    }
-
-    template<class Type, class Buffer>
-    auto read(Buffer& b) -> typename MapType<Type>::ret_type{
-        static_assert(IsBuffer<Buffer>::value);
-        return readOne(b, MapType<Type>{});
-    }
-
+    void done(){    writer_.done(); }
 };
 
 using PackedCodec = PackedCodecT<>;
+
+
+template<class PackedCodec, class Buffer, class ...Args>
+void store(Buffer& buf, const Args& ...args){
+    static_assert(IsWritableBuffer<Buffer>::value);
+    PackedCodec codec;
+
+    size_t offset{0};
+    const size_t lens[sizeof...(args)] = {
+        codec.sizeOf(args, offset)...
+    };
+    if(buf.hasSpace(offset)){
+        size_t i{0};
+        auto p = bytePtr(buf);
+        ((codec.storeOne(p, args, lens[i]), p += lens[i++]), ...);
+        buf.shift(offset);
+        codec.done();
+    }
+}
+
+template<class PackedCodec, class Type, class Buffer>
+auto read(Buffer& b) -> typename MapType<Type>::ret_type{
+    static_assert(IsBuffer<Buffer>::value);
+    PackedCodec c;
+    return c.readOne(b, MapType<Type>{});
+}
+
 
 }   // End of namespace ll_log::details
 

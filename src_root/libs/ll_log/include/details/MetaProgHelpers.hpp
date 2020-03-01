@@ -19,6 +19,17 @@ struct AssertSame{
     static constexpr auto value = std::is_same_v<A, B>;
 };
 
+template<class T>
+struct ArgTypeT{
+    using type = typename std::conditional_t<std::is_trivially_copyable_v<T> && (sizeof(T) <= sizeof(void*))
+        , T
+        , const T&
+    >;
+};
+
+template<class T>
+using ArgType = typename ArgTypeT<T>::type;
+
 }
 
 
