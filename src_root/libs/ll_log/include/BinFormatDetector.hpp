@@ -49,6 +49,8 @@ struct BinFmtItem{
     };
 };
 
+static_assert(sizeof(BinFmtItem) == sizeof(char));
+
 //using BinFmtItem = unsigned char;
 template<class T>
 constexpr std::enable_if_t<std::is_integral_v<T>, char> getItemBinFmt(T)
