@@ -2,7 +2,7 @@
  * BasicTest.cpp
  *
  *  Created on: Jan 31, 2020
- *      Author: vsol
+ *      Author: Vladimir Solontsov
  */
 #include <catch2/catch.hpp>
 #include <iostream>

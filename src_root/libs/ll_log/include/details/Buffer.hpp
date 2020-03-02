@@ -2,7 +2,7 @@
  * Buffer.hpp
  *
  *  Created on: Feb 29, 2020
- *      Author: vsol
+ *      Author: Vladimir Solontsov
  */
 
 #ifndef SRC_ROOT_LIBS_LL_LOG_INCLUDE_DETAILS_BUFFER_HPP_

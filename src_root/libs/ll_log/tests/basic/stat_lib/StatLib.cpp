@@ -2,7 +2,7 @@
  * StatLib.cpp
  *
  *  Created on: Feb 2, 2020
- *      Author: vsol
+ *      Author: Vladimir Solontsov
  */
 #include <LogPoint.hpp>
 

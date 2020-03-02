@@ -2,7 +2,7 @@
  * MetaProgHelpers.hpp
  *
  *  Created on: Mar 1, 2020
- *      Author: vsol
+ *      Author: Vladimir Solontsov
  */
 
 #ifndef SRC_ROOT_LIBS_LL_LOG_INCLUDE_DETAILS_METAPROGHELPERS_HPP_

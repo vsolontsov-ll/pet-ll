@@ -2,7 +2,7 @@
  * LogPoint.cpp
  *
  *  Created on: Feb 1, 2020
- *      Author: vsol
+ *      Author: Vladimir Solontsov
  */
 #include <LogPoint.hpp>
 

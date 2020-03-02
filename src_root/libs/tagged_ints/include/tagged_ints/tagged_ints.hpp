@@ -2,7 +2,7 @@
  * tagged_ints.hpp
  *
  *  Created on: Nov 10, 2019
- *      Author: vsol
+ *      Author: Vladimir Solontsov
  */
 
 #ifndef SRC_ROOT_LIBS_TAGGED_INTS_INCLUDE_TAGGED_INTS_TAGGED_INTS_HPP_

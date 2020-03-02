@@ -2,7 +2,7 @@
  * CatchMain.cpp
  *
  *  Created on: Feb 1, 2020
- *      Author: vsol
+ *      Author: Vladimir Solontsov
  */
 
 #define CATCH_CONFIG_MAIN

@@ -2,7 +2,7 @@
  * BufferTest.cpp
  *
  *  Created on: Feb 9, 2020
- *      Author: vsol
+ *      Author: Vladimir Solontsov
  *
  *
  * For storing data we can use:
