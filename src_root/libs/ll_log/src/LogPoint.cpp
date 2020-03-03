@@ -13,6 +13,13 @@ Points& getPoints () {
     return p;
 }
 
+#if __cplusplus > 202000
+#   define AGG_INIT(member) .##member =
+#else
+#   define AGG_INIT(member)
+#endif
+
+
 [[gnu::used]] PointId addPoint(
         PointId& ptid
         , int level

@@ -34,5 +34,19 @@ struct DummyLogger{
 }  // namespace ll_log
 
 
+#define LLI_ARG_FIRST(fmt, ...) (fmt)
+#define LLI_GET_BIN_FMT(fmt, ...) ll_log::details::getBinFormat(__VA_ARGS__)
+
+// TODO: For now assume there's a 'logger' object in scope
+#define LL_INFO(...)                                                            \
+    {                                                                           \
+        LOG_POINT_INIT(                                                         \
+            1 /* TODO replace with log level) */                                \
+            , LLI_ARG_FIRST(__VA_ARGS__, Dummy)                                 \
+            , LLI_GET_BIN_FMT(__VA_ARGS__, ll_log::details::DummyArg{})         \
+        );                                                                      \
+        logger.store(&ptid, __VA_ARGS__);                                       \
+    } do{}while(false)
+
 
 #endif /* SRC_ROOT_LIBS_LL_LOG_INCLUDE_LOGGER_HPP_ */

@@ -18,29 +18,29 @@ using namespace std::literals::string_literals;
 static int counter;
 
 
-#define POINT(var)	\
-    static int var;	\
+#define POINT(var)  \
+    static int var; \
     {   struct Point{ [[gnu::used]] static void init(){ var = ++counter;    }};\
         INIT_ARRAY(Point::init);}
 
 template<class T>
 int foo()
 {
-	POINT(vvv);
-	return vvv;
+    POINT(vvv);
+    return vvv;
 }
 
 
 TEST_CASE("Init array", "[initarray]") {
-	POINT(t1);
-	CHECK(t1 > 0);
+    POINT(t1);
+    CHECK(t1 > 0);
 
-	const auto t2 = foo<char>();
-	const auto t3 = foo<int>();
-	CHECK(t2 > 0);
-	CHECK(t3 > 0);
-	CHECK(t2 != t3);
-	CHECK(t1 + t2 + t3 == 6);
+    const auto t2 = foo<char>();
+    const auto t3 = foo<int>();
+    CHECK(t2 > 0);
+    CHECK(t3 > 0);
+    CHECK(t2 != t3);
+    CHECK(t1 + t2 + t3 == 6);
 }
 
 namespace test_log_init{

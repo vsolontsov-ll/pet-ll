@@ -32,7 +32,11 @@ Possible buffers are
     
 ## TODOs
 1. BasicWriter (packed, cached, no SFENCE)
-    1. Optimize size check
-    1. Reader and Writer to codec (write and read are strongly related)
-1. Basic buffer
-1. Rework to custom section
+    1. [x] Optimize size check-
+    1. [x] Reader and Writer to codec (write and read are strongly related)
+1. [x] Basic buffer
+1. [x] Rework to custom section
+1. [ ] Encode/decode PointsList
+1. [ ] Parse dump
+1. [ ] Format log (using fmt::internal)
+1. [ ] Fmtlib: add good interface
