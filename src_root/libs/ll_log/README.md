@@ -40,3 +40,7 @@ Possible buffers are
 1. [ ] Parse dump
 1. [ ] Format log (using fmt::internal)
 1. [ ] Fmtlib: add good interface
+
+## Notes
+1. For reacord starts in a ring it can have a bit-mask. Say, it tends to align records by CLs. One CL of bit-mask covers 4KB.
+1. How about a rule: If record size if less or equal CL size, it shouldn't cross the CL boundary.

@@ -6,11 +6,12 @@
  */
 #include <catch2/catch.hpp>
 #include <iostream>
+#include <string>
+#include <sstream>
 
 #include <LogPoint.hpp>
 #include <BinFormatDetector.hpp>
 
-#include <string>
 
 #include "../../include/Logger.hpp"
 using namespace std::literals::string_literals;
@@ -156,4 +157,12 @@ TEST_CASE("Log macro. Check points", ""){
     CHECK("12345" == (read<Codec, const char*>(rdBuf)));
     CHECK(0.1 == Approx{read<Codec, double>(rdBuf)});
     CHECK(0.2f == Approx{read<Codec, float>(rdBuf)});
+}
+
+TEST_CASE("Points serialisation", "Dump/Read"){
+    std::stringstream ss{std::ios_base::binary | std::ios_base::in | std::ios_base::out};
+    ss << ll_log::details::PointsWriter{0, true};
+
+    auto points = ll_log::details::readPoints(ss, true);
+    CHECK(points.size() == ll_log::details::getPoints().size());
 }
